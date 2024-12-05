@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState(null);
-  const [genres, setGenres] = useState({}); // Initialize genres as an object
-  const [currGenre, setCurrGenre] = useState('All Genres'); // Track current selected genre
+  const [sortCriterion, setSortCriterion] = useState('rating'); // New state for sorting criterion
+  const [genres, setGenres] = useState({});
+  const [currGenre, setCurrGenre] = useState('All Genres');
 
-  // Fetch genres from TMDB API
   useEffect(() => {
     const fetchGenres = async () => {
       try {
@@ -18,13 +18,12 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
         }
         const data = await response.json();
 
-        // Check if 'genres' exists in the response data
         if (data && data.genres) {
           const genreMap = data.genres.reduce((acc, genre) => {
             acc[genre.id] = genre.name;
             return acc;
           }, {});
-          setGenres(genreMap); // Set the genres state to the genreMap
+          setGenres(genreMap);
         } else {
           console.error('Genres data not found in response');
         }
@@ -36,28 +35,30 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
     fetchGenres();
   }, []);
 
-  // Map genres to each movie based on their genre_ids
   const getGenresForMovie = (genreIds) => {
     return genreIds
-      .map((id) => genres[id] || 'Unknown') // Get genre names from the genre IDs
-      .join(', '); // Join genres by a comma
+      .map((id) => genres[id] || 'Unknown')
+      .join(', ');
   };
 
-  // Filter watchlist by search query and current genre
   const filteredWatchList = watchList.filter((movieObj) => {
     const movieTitle = movieObj.name || movieObj.title || '';
     const matchesSearch = movieTitle.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesGenre = currGenre === 'All Genres' || movieObj.genre_ids.some(id => genres[id] === currGenre);
+    const matchesGenre =
+      currGenre === 'All Genres' || movieObj.genre_ids.some((id) => genres[id] === currGenre);
 
     return matchesSearch && matchesGenre;
   });
 
   const sortedWatchList = [...filteredWatchList].sort((a, b) => {
-    if (sortOrder === 'asc') {
-      return (a.vote_average || 0) - (b.vote_average || 0);
-    } else if (sortOrder === 'desc') {
-      return (b.vote_average || 0) - (a.vote_average || 0);
+    if (sortCriterion === 'rating') {
+      return sortOrder === 'asc'
+        ? (a.vote_average || 0) - (b.vote_average || 0)
+        : (b.vote_average || 0) - (a.vote_average || 0);
+    } else if (sortCriterion === 'popularity') {
+      return sortOrder === 'asc'
+        ? (a.popularity || 0) - (b.popularity || 0)
+        : (b.popularity || 0) - (a.popularity || 0);
     }
     return 0;
   });
@@ -66,7 +67,8 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
     setSearchQuery(e.target.value);
   };
 
-  const setSortingOrder = (order) => {
+  const setSortingOrder = (criterion, order) => {
+    setSortCriterion(criterion);
     setSortOrder(order);
   };
 
@@ -78,10 +80,11 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
     <>
       {/* Action Buttons */}
       <div className="flex justify-center flex-wrap m-4 gap-4">
-        {/* Render genres dynamically */}
         <div
           onClick={() => handleFilter('All Genres')}
-          className={`flex justify-center gap-4 h-[3rem] w-[9rem] rounded-xl text-white font-bold items-center ${currGenre === 'All Genres' ? 'bg-blue-400' : 'bg-gray-400/50'} mx-4 cursor-pointer`}
+          className={`flex justify-center gap-4 h-[3rem] w-[9rem] rounded-xl text-white font-bold items-center ${
+            currGenre === 'All Genres' ? 'bg-blue-400' : 'bg-gray-400/50'
+          } mx-4 cursor-pointer`}
         >
           All Genres
         </div>
@@ -89,7 +92,9 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
           <div
             key={index}
             onClick={() => handleFilter(genre)}
-            className={`flex justify-center gap-4 h-[3rem] w-[9rem] rounded-xl text-white font-bold items-center ${currGenre === genre ? 'bg-blue-400' : 'bg-gray-400/50'} mx-4 cursor-pointer`}
+            className={`flex justify-center gap-4 h-[3rem] w-[9rem] rounded-xl text-white font-bold items-center ${
+              currGenre === genre ? 'bg-blue-400' : 'bg-gray-400/50'
+            } mx-4 cursor-pointer`}
           >
             {genre}
           </div>
@@ -117,7 +122,7 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
                 <div className="flex items-center justify-center gap-2">
                   <button
                     className="text-gray-600 hover:text-gray-900"
-                    onClick={() => setSortingOrder('asc')}
+                    onClick={() => setSortingOrder('rating', 'asc')}
                     title="Sort by Lowest Rating"
                   >
                     <i className="fa-solid fa-arrow-down"></i>
@@ -125,14 +130,32 @@ function WatchList({ watchList = [], handleRemoveFromWatchlist }) {
                   <span>Rating</span>
                   <button
                     className="text-gray-600 hover:text-gray-900"
-                    onClick={() => setSortingOrder('desc')}
+                    onClick={() => setSortingOrder('rating', 'desc')}
                     title="Sort by Highest Rating"
                   >
                     <i className="fa-solid fa-arrow-up"></i>
                   </button>
                 </div>
               </th>
-              <th>Popularity</th>
+              <th>
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    className="text-gray-600 hover:text-gray-900"
+                    onClick={() => setSortingOrder('popularity', 'asc')}
+                    title="Sort by Lowest Popularity"
+                  >
+                    <i className="fa-solid fa-arrow-down"></i>
+                  </button>
+                  <span>Popularity</span>
+                  <button
+                    className="text-gray-600 hover:text-gray-900"
+                    onClick={() => setSortingOrder('popularity', 'desc')}
+                    title="Sort by Highest Popularity"
+                  >
+                    <i className="fa-solid fa-arrow-up"></i>
+                  </button>
+                </div>
+              </th>
               <th>Genre</th>
               <th>Action</th>
             </tr>
