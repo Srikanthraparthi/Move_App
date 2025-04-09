@@ -1,11 +1,11 @@
 {
-  "homepage": "http://localhost:5173/Srikanthraparthi/MovieApp",
+  
   "name": "movie",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predeploy": "npm run build",
+   
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -14,7 +14,7 @@
     "start": "vite",
     "format": "prettier --write .",
     "clean": "rm -rf dist",
-    "deploy": "gh-pages -d dist",
+    
     "test:watch": "react-scripts test --watch"
   },
   "dependencies": {
